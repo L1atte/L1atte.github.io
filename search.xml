@@ -4,6 +4,33 @@
   
     
     <entry>
+      <title>Axios 中 get 请求时传递特殊字符</title>
+      <link href="/2021/12/18/Axios%20%E4%B8%AD%20get%20%E8%AF%B7%E6%B1%82%E6%97%B6%E4%BC%A0%E9%80%92%E7%89%B9%E6%AE%8A%E5%AD%97%E7%AC%A6/"/>
+      <url>/2021/12/18/Axios%20%E4%B8%AD%20get%20%E8%AF%B7%E6%B1%82%E6%97%B6%E4%BC%A0%E9%80%92%E7%89%B9%E6%AE%8A%E5%AD%97%E7%AC%A6/</url>
+      
+        <content type="html"><![CDATA[<h1 id="Axios-中-get-请求时传递特殊字符"><a href="#Axios-中-get-请求时传递特殊字符" class="headerlink" title="Axios 中 get 请求时传递特殊字符"></a>Axios 中 get 请求时传递特殊字符</h1><h2 id="起因"><a href="#起因" class="headerlink" title="起因"></a>起因</h2><p>这周做一个筛选查询的需求，需要传递一个包含筛选条件的数组作为 <code>get</code> 请求的参数。由于后端设置的参数格式是对整个筛选条件进行编码。</p><p>举例：传递参数为</p><p><code>where: [&#123;&quot;field&quot;:&quot;dataType&quot;,&quot;op&quot;:&quot;equal&quot;,&quot;value&quot;:&quot;0&quot;&#125;]</code>时候(where为字段名)，</p><p>后端要求的格式是</p><p><code>where=%5B%7B%22field%22%3A%22dataType%22%2C%22op%22%3A%22equal%22%2C%22value%22%3A%220%22%7D%5D</code></p><h2 id="初步方案"><a href="#初步方案" class="headerlink" title="初步方案"></a>初步方案</h2><p>经过了解，对 URL 进行编码的有两种方法：<code>encodeURI()</code> 和 <code>encodeURIComponent()</code></p><p>两者最大的区别就是 <code>encodeURI()</code>用于对一个完整的URL进行编码，而 <code>encodeURIComponent()</code>适用于对URL的组成部分进行个别编码，而不用与对整个URL进行编码</p><h2 id="踩坑"><a href="#踩坑" class="headerlink" title="踩坑"></a>踩坑</h2><p>于是，我自然而然地使用 <code>encodeURIComponent()</code> 对筛选条件进行编码。</p><p>然后，接口依然报错。打开控制台发现，中括号并没有被编码。</p><p><img src="/img/6.png"></p><p>如果所示，不仅中括号没有被编码，连逗号也没有。</p><p>这就很难受，查看代码中的请求写法。</p><p><img src="/img/1.png"></p><p>然而代码有条不紊地执行着，应该是OK的啊？</p><h2 id="再探"><a href="#再探" class="headerlink" title="再探"></a>再探</h2><p>无奈之下，打开 <code>Axios</code> 翻起来源码，找到了在创建 xhr 请求时，对请求参数做了一个 <code>buildUrl</code> 的处理。源码路径为： <code>axios/lib/helper/builderUrl.js</code> 。这个文件中我们可以找到对参数进行编码的函数</p><p><img src="/img/2.png"></p><p>具体行为是将参数做了<code>encodeURIComponent</code>编码处理，但是，但是！！！然后又把下面的特殊字符转义回去了。所以我们可以看到逗号和中括号在请求的 URL 中没有被编码</p><h2 id="最后"><a href="#最后" class="headerlink" title="最后"></a>最后</h2><p><code>Axios</code>做这样的处理也是情理之中，因为这些字符通常有着特殊的含义，所以要对其进行特殊转义处理。</p><p>那么我们怎么解决bug呢？</p><p>修改源码？自然是不可取的，太粗暴了。</p><p><strong>其实方法很简单，参数不放在 <code>params</code> 里面，就不会被 <code>Axios</code> 进行 特殊的编码处理。</strong></p><p><code>Axios</code> 对 URL 的处理没有那么复杂，仅仅是执行了<code>combineURLs</code>,文件路径：(axios/lib/helpers/combineURLs.js)</p><p><img src="/img/3.png"></p><p><strong>我们直接手动对参数进行编码然后拼接成字符串，再拼回 URL 中就可以完美解决这个问题了。</strong></p><p><img src="/img/5.png"></p><p>再放一个修改前的代码，作为对比参考：</p><p><img src="/img/4.png"></p><h2 id="参考文章"><a href="#参考文章" class="headerlink" title="参考文章"></a>参考文章</h2><p><a href="https://juejin.cn/post/6904504237422542862">axios中get传参传递特殊字符</a></p><p><a href="https://blog.csdn.net/liubangbo/article/details/112995555">axios get请求特殊字符编码问题</a></p>]]></content>
+      
+      
+      <categories>
+          
+          <category> Axios </category>
+          
+      </categories>
+      
+      
+        <tags>
+            
+            <tag> 浏览器 </tag>
+            
+            <tag> Axios </tag>
+            
+        </tags>
+      
+    </entry>
+    
+    
+    
+    <entry>
       <title>寿司🍣 Promise 之 API (all,  allSettled, any, race, resolve, reject)</title>
       <link href="/2021/12/05/%E5%AF%BF%E5%8F%B8Promise%20%E4%B9%8B%20API%20(all,%20%20allSettled,%20any,%20race,%20resolve,%20reject)/"/>
       <url>/2021/12/05/%E5%AF%BF%E5%8F%B8Promise%20%E4%B9%8B%20API%20(all,%20%20allSettled,%20any,%20race,%20resolve,%20reject)/</url>
